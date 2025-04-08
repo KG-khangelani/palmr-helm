@@ -1,0 +1,19 @@
+apiVersion: v2
+name: palmr
+description: A Helm chart for deploying Palmr., an open-source file-sharing platform, on Kubernetes.
+type: application
+version: 0.1.0
+appVersion: "1.1.7-beta"
+home: https://github.com/kyantech/Palmr
+sources:
+  - https://github.com/kyantech/Palmr/tree/main
+  - https://palmr-docs.kyantech.com.br/
+maintainers:
+  - name: Kyantech Team
+    email: support@kyantech.com.br
+keywords:
+  - palmr
+  - file-sharing
+  - self-hosted
+  - kubernetes
+  - helm
