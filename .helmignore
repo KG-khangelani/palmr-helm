@@ -1,0 +1,14 @@
+# Exclude the Python virtual environment folder
+.venv/
+
+# Exclude node_modules (if applicable)
+node_modules/
+
+# Exclude git metadata
+.git/
+.gitignore
+
+# Exclude editor config files
+*.swp
+*~
+.DS_Store
