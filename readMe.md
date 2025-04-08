@@ -1,3 +1,7 @@
+Below is an example of a README.md file for your Helm chart. You can include this file at the root of your chart’s repository to explain the purpose of the chart and properly credit the original creators.
+
+---
+
 # Palmr Helm Chart
 
 This Helm chart is designed to deploy [Palmr](https://github.com/kyantech/Palmr/tree/main), an open-source file-sharing platform focused on privacy and security, on your Kubernetes cluster.
@@ -28,3 +32,68 @@ The configuration is adaptable, enabling you to choose the preferred storage bac
    ```bash
    git clone https://github.com/your-helm-repo/palmr-helm-chart.git
    cd palmr-helm-chart
+   ```
+
+2. **Customize the Values**
+
+   Edit the `values.yaml` file to configure PostgreSQL, MinIO (or local storage), and Palmr according to your needs.
+
+3. **Install the Chart**
+
+   ```bash
+   helm install my-palmr ./palmr-helm-chart
+   ```
+
+   To override settings at install time, use the `--set` flag. For example, to disable MinIO and use local storage:
+
+   ```bash
+   helm install my-palmr ./palmr-helm-chart --set minio.enabled=false --set palmr.storage.useMinio=false
+   ```
+
+## Configuration
+
+Refer to the `values.yaml` file for a complete list of configurable parameters:
+
+- **PostgreSQL:**
+    - `postgres.username`
+    - `postgres.password`
+    - `postgres.db`
+    - `postgres.persistence.size`
+
+- **MinIO:** (enable or disable MinIO deployment)
+    - `minio.enabled`
+    - `minio.rootUser`
+    - `minio.rootPassword`
+    - `minio.persistence.size`
+
+- **Palmr:**
+    - `palmr.image`
+    - `palmr.replicaCount`
+    - `palmr.storage.useMinio`  
+      Set this to `true` to use MinIO or `false` to use local storage via a dedicated PVC.
+    - `palmr.storage.pvc.size`
+    - `palmr.storage.pvc.storageClassName`
+
+## Credits and Acknowledgements
+
+This Helm chart is intended to simplify the deployment of [Palmr](https://github.com/kyantech/Palmr/tree/main) on Kubernetes.
+
+- **Original Palmr Software:**  
+  Developed and maintained by the team at [Kyantech](https://github.com/kyantech/Palmr).  
+  For the original Palmr source code and documentation, please visit:
+    - GitHub: [https://github.com/kyantech/Palmr/tree/main](https://github.com/kyantech/Palmr/tree/main)
+    - Documentation: [https://palmr-docs.kyantech.com.br/](https://palmr-docs.kyantech.com.br/)
+
+This chart was inspired by and builds upon the official Docker Compose configuration files and deployment scripts provided by the Palmr project.
+
+## License
+
+This Helm chart is distributed under the same license as Palmr (BSD-2-Clause). Please review the original project’s repository for full licensing details.
+
+## Support
+
+For support with this Helm chart, please open an issue in this repository. For support with Palmr itself, please refer to the [official documentation](https://palmr-docs.kyantech.com.br/) and [GitHub repository](https://github.com/kyantech/Palmr/tree/main).
+
+---
+
+Happy deploying!

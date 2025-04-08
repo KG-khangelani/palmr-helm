@@ -1,0 +1,264 @@
+{{- /*
+  This single‑file template deploys PostgreSQL, optionally MinIO, and Palmr.
+  Users can choose their storage backend:
+    • Use the recommended MinIO by setting `.Values.minio.enabled` to true.
+    • Use local persistent storage (e.g. via Longhorn) by setting `.Values.minio.enabled` to false.
+  */ -}}
+  {{- $fullname := .Release.Name }}
+
+  {{- if .Values.postgres.enabled }}
+  # =============================================================================
+  # PostgreSQL PersistentVolumeClaim
+  # =============================================================================
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $fullname }}-postgres-pvc
+  labels:
+    app: {{ $fullname }}-postgres
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.postgres.persistence.size }}
+
+# =============================================================================
+# PostgreSQL Deployment
+# =============================================================================
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-postgres
+  labels:
+    app: {{ $fullname }}-postgres
+spec:
+  replicas: {{ .Values.postgres.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ $fullname }}-postgres
+  template:
+    metadata:
+      labels:
+        app: {{ $fullname }}-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: "{{ .Values.postgres.image }}"
+          imagePullPolicy: {{ .Values.postgres.imagePullPolicy }}
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: "{{ .Values.postgres.username }}"
+            - name: POSTGRES_PASSWORD
+              value: "{{ .Values.postgres.password }}"
+            - name: POSTGRES_DB
+              value: "{{ .Values.postgres.db }}"
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: {{ $fullname }}-postgres-pvc
+
+# =============================================================================
+# PostgreSQL Service
+# =============================================================================
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-postgres
+  labels:
+    app: {{ $fullname }}-postgres
+spec:
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+  selector:
+    app: {{ $fullname }}-postgres
+  {{- end }}
+
+
+  {{- if .Values.minio.enabled }}
+# =============================================================================
+# MinIO PersistentVolumeClaim
+# =============================================================================
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $fullname }}-minio-pvc
+  labels:
+    app: {{ $fullname }}-minio
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.minio.persistence.size }}
+  {{- end }}
+
+  {{- if .Values.minio.enabled }}
+# =============================================================================
+# MinIO Deployment
+# =============================================================================
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-minio
+  labels:
+    app: {{ $fullname }}-minio
+spec:
+  replicas: {{ .Values.minio.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ $fullname }}-minio
+  template:
+    metadata:
+      labels:
+        app: {{ $fullname }}-minio
+    spec:
+      containers:
+        - name: minio
+          image: "{{ .Values.minio.image }}"
+          imagePullPolicy: {{ .Values.minio.imagePullPolicy }}
+          args:
+            - "server"
+            - "/data"
+          ports:
+            - containerPort: 9000
+          env:
+            - name: MINIO_ROOT_USER
+              value: "{{ .Values.minio.rootUser }}"
+            - name: MINIO_ROOT_PASSWORD
+              value: "{{ .Values.minio.rootPassword }}"
+          volumeMounts:
+            - name: minio-storage
+              mountPath: /data
+      volumes:
+        - name: minio-storage
+          persistentVolumeClaim:
+            claimName: {{ $fullname }}-minio-pvc
+
+# =============================================================================
+# MinIO Service
+# =============================================================================
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-minio
+  labels:
+    app: {{ $fullname }}-minio
+spec:
+  ports:
+    - name: minio
+      port: 9000
+      targetPort: 9000
+  selector:
+    app: {{ $fullname }}-minio
+  {{- end }}
+
+
+# =============================================================================
+# Palmr Persistent Storage (if not using MinIO)
+# =============================================================================
+  {{- if not .Values.minio.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $fullname }}-palmr-pvc
+  labels:
+    app: {{ $fullname }}-palmr
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.palmr.storage.pvc.storageClassName | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.palmr.storage.pvc.size }}
+  {{- end }}
+
+
+  {{- if .Values.palmr.enabled }}
+# =============================================================================
+# Palmr Deployment
+# =============================================================================
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-palmr
+  labels:
+    app: {{ $fullname }}-palmr
+spec:
+  replicas: {{ .Values.palmr.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ $fullname }}-palmr
+  template:
+    metadata:
+      labels:
+        app: {{ $fullname }}-palmr
+    spec:
+      containers:
+        - name: palmr
+          image: "{{ .Values.palmr.image }}"
+          imagePullPolicy: {{ .Values.palmr.imagePullPolicy }}
+          ports:
+            - containerPort: 80
+          env:
+            # PostgreSQL connection
+            - name: DATABASE_URL
+              value: "postgres://{{ .Values.postgres.username }}:{{ .Values.postgres.password }}@{{ $fullname }}-postgres:5432/{{ .Values.postgres.db }}"
+            {{- if .Values.minio.enabled }}
+            # Configure MinIO as object storage
+            - name: MINIO_ENDPOINT
+              value: "http://{{ $fullname }}-minio:9000"
+            - name: MINIO_ROOT_USER
+              value: "{{ .Values.minio.rootUser }}"
+            - name: MINIO_ROOT_PASSWORD
+              value: "{{ .Values.minio.rootPassword }}"
+            {{- else }}
+            # If MinIO is not used, assume local storage mode
+            - name: STORAGE_TYPE
+              value: "local"
+            {{- end }}
+          volumeMounts:
+            - name: palmr-data
+              mountPath: /app/data
+      volumes:
+        - name: palmr-data
+          {{- if not .Values.minio.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ $fullname }}-palmr-pvc
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+
+# =============================================================================
+# Palmr Service
+# =============================================================================
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-palmr
+  labels:
+    app: {{ $fullname }}-palmr
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+  selector:
+    app: {{ $fullname }}-palmr
+  {{- end }}
