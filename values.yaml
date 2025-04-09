@@ -9,10 +9,8 @@ postgres:
   persistence:
     size: "5Gi"
 
-# To use the recommended MinIO storage, set enabled: true.
-# To use local storage (for example, backed by Longhorn), set enabled: false.
 minio:
-  enabled: true
+  enabled: true    # Set to false to disable MinIO and use local storage instead.
   replicaCount: 1
   image: "minio/minio:latest"
   imagePullPolicy: IfNotPresent
@@ -22,16 +20,18 @@ minio:
     size: "10Gi"
 
 palmr:
-  enabled: true
-  replicaCount: 1
-  image: "kyantech/palmr:latest"
-  imagePullPolicy: IfNotPresent
-  storage:
-    # When true, Palmr will expect MinIO to be deployed.
-    # When false, Palmr uses a dedicated PVC for direct (e.g. Longhorn) storage.
-    useMinio: true
-    pvc:
-      enabled: true
-      size: "10Gi"
-      # Set this to the storage class you want to use (e.g. "longhorn")
-      storageClassName: "longhorn"
+  api:
+    enabled: true
+    replicaCount: 1
+    image: "kyantech/palmr-api:latest"
+    imagePullPolicy: IfNotPresent
+    port: 3000
+  app:
+    enabled: true
+    replicaCount: 1
+    image: "kyantech/palmr-app:latest"
+    imagePullPolicy: IfNotPresent
+    port: 80
+    service:
+      type: LoadBalancer
+      port: 80

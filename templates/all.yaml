@@ -1,15 +1,18 @@
 {{- /*
-  This single‑file template deploys PostgreSQL, optionally MinIO, and Palmr.
-  Users can choose their storage backend:
-    • Use the recommended MinIO by setting `.Values.minio.enabled` to true.
-    • Use local persistent storage (e.g. via Longhorn) by setting `.Values.minio.enabled` to false.
-  */ -}}
-  {{- $fullname := .Release.Name }}
+This is a single-file Helm template that deploys:
+  - PostgreSQL (required by Palmr)
+  - Optionally, MinIO for S3-compatible storage (recommended) or you can disable it
+  - Palmr API, using the Docker Hub image kyantech/palmr-api
+  - Palmr App, using the Docker Hub image kyantech/palmr-app
 
-  {{- if .Values.postgres.enabled }}
-  # =============================================================================
-  # PostgreSQL PersistentVolumeClaim
-  # =============================================================================
+Users can configure which storage backend to use. If .Values.minio.enabled is true,
+MinIO will be deployed and Palmr API will be configured accordingly.
+If false, it is assumed a local storage mechanism is used.
+*/ -}}
+{{- $fullname := .Release.Name }}
+
+{{/* ------------------- PostgreSQL ------------------------ */}}
+{{- if .Values.postgres.enabled }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -23,10 +26,6 @@ spec:
   resources:
     requests:
       storage: {{ .Values.postgres.persistence.size }}
-
-# =============================================================================
-# PostgreSQL Deployment
-# =============================================================================
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -64,10 +63,6 @@ spec:
         - name: postgres-storage
           persistentVolumeClaim:
             claimName: {{ $fullname }}-postgres-pvc
-
-# =============================================================================
-# PostgreSQL Service
-# =============================================================================
 ---
 apiVersion: v1
 kind: Service
@@ -82,13 +77,10 @@ spec:
       targetPort: 5432
   selector:
     app: {{ $fullname }}-postgres
-  {{- end }}
+{{- end }}
 
-
-  {{- if .Values.minio.enabled }}
-# =============================================================================
-# MinIO PersistentVolumeClaim
-# =============================================================================
+{{/* ------------------- MinIO (Optional) ------------------------ */}}
+{{- if .Values.minio.enabled }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -102,12 +94,6 @@ spec:
   resources:
     requests:
       storage: {{ .Values.minio.persistence.size }}
-  {{- end }}
-
-  {{- if .Values.minio.enabled }}
-# =============================================================================
-# MinIO Deployment
-# =============================================================================
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -146,10 +132,6 @@ spec:
         - name: minio-storage
           persistentVolumeClaim:
             claimName: {{ $fullname }}-minio-pvc
-
-# =============================================================================
-# MinIO Service
-# =============================================================================
 ---
 apiVersion: v1
 kind: Service
@@ -164,101 +146,104 @@ spec:
       targetPort: 9000
   selector:
     app: {{ $fullname }}-minio
-  {{- end }}
+{{- end }}
 
-
-# =============================================================================
-# Palmr Persistent Storage (if not using MinIO)
-# =============================================================================
-  {{- if not .Values.minio.enabled }}
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ $fullname }}-palmr-pvc
-  labels:
-    app: {{ $fullname }}-palmr
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: {{ .Values.palmr.storage.pvc.storageClassName | quote }}
-  resources:
-    requests:
-      storage: {{ .Values.palmr.storage.pvc.size }}
-  {{- end }}
-
-
-  {{- if .Values.palmr.enabled }}
-# =============================================================================
-# Palmr Deployment
-# =============================================================================
+{{/* ------------------- Palmr API ------------------------ */}}
+{{- if .Values.palmr.api.enabled }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $fullname }}-palmr
+  name: {{ $fullname }}-palmr-api
   labels:
-    app: {{ $fullname }}-palmr
+    app: {{ $fullname }}-palmr-api
 spec:
-  replicas: {{ .Values.palmr.replicaCount }}
+  replicas: {{ .Values.palmr.api.replicaCount }}
   selector:
     matchLabels:
-      app: {{ $fullname }}-palmr
+      app: {{ $fullname }}-palmr-api
   template:
     metadata:
       labels:
-        app: {{ $fullname }}-palmr
+        app: {{ $fullname }}-palmr-api
     spec:
       containers:
-        - name: palmr
-          image: "{{ .Values.palmr.image }}"
-          imagePullPolicy: {{ .Values.palmr.imagePullPolicy }}
+        - name: palmr-api
+          image: "{{ .Values.palmr.api.image }}"
+          imagePullPolicy: {{ .Values.palmr.api.imagePullPolicy }}
           ports:
-            - containerPort: 80
+            - containerPort: {{ .Values.palmr.api.port }}
           env:
-            # PostgreSQL connection
             - name: DATABASE_URL
               value: "postgres://{{ .Values.postgres.username }}:{{ .Values.postgres.password }}@{{ $fullname }}-postgres:5432/{{ .Values.postgres.db }}"
-            {{- if .Values.minio.enabled }}
-            # Configure MinIO as object storage
+          {{- if .Values.minio.enabled }}
             - name: MINIO_ENDPOINT
               value: "http://{{ $fullname }}-minio:9000"
             - name: MINIO_ROOT_USER
               value: "{{ .Values.minio.rootUser }}"
             - name: MINIO_ROOT_PASSWORD
               value: "{{ .Values.minio.rootPassword }}"
-            {{- else }}
-            # If MinIO is not used, assume local storage mode
+          {{- else }}
             - name: STORAGE_TYPE
               value: "local"
-            {{- end }}
-          volumeMounts:
-            - name: palmr-data
-              mountPath: /app/data
-      volumes:
-        - name: palmr-data
-          {{- if not .Values.minio.enabled }}
-          persistentVolumeClaim:
-            claimName: {{ $fullname }}-palmr-pvc
-          {{- else }}
-          emptyDir: {}
           {{- end }}
-
-# =============================================================================
-# Palmr Service
-# =============================================================================
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $fullname }}-palmr
+  name: {{ $fullname }}-palmr-api
   labels:
-    app: {{ $fullname }}-palmr
+    app: {{ $fullname }}-palmr-api
 spec:
   ports:
-    - name: http
-      port: 80
-      targetPort: 80
+    - name: api
+      port: {{ .Values.palmr.api.port }}
+      targetPort: {{ .Values.palmr.api.port }}
   selector:
-    app: {{ $fullname }}-palmr
-  {{- end }}
+    app: {{ $fullname }}-palmr-api
+{{- end }}
+
+{{/* ------------------- Palmr App ------------------------ */}}
+{{- if .Values.palmr.app.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-palmr-app
+  labels:
+    app: {{ $fullname }}-palmr-app
+spec:
+  replicas: {{ .Values.palmr.app.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ $fullname }}-palmr-app
+  template:
+    metadata:
+      labels:
+        app: {{ $fullname }}-palmr-app
+    spec:
+      containers:
+        - name: palmr-app
+          image: "{{ .Values.palmr.app.image }}"
+          imagePullPolicy: {{ .Values.palmr.app.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.palmr.app.port }}
+          env:
+            - name: API_URL
+              value: "http://{{ $fullname }}-palmr-api:{{ .Values.palmr.api.port }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-palmr-app
+  labels:
+    app: {{ $fullname }}-palmr-app
+spec:
+  type: {{ .Values.palmr.app.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.palmr.app.service.port }}
+      targetPort: {{ .Values.palmr.app.port }}
+  selector:
+    app: {{ $fullname }}-palmr-app
+{{- end }}
