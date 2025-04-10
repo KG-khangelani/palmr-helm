@@ -1,7 +1,3 @@
-Below is an example of a README.md file for your Helm chart. You can include this file at the root of your chart’s repository to explain the purpose of the chart and properly credit the original creators.
-
----
-
 # Palmr Helm Chart
 
 This Helm chart is designed to deploy [Palmr](https://github.com/kyantech/Palmr/tree/main), an open-source file-sharing platform focused on privacy and security, on your Kubernetes cluster.
