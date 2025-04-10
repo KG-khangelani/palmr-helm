@@ -17,3 +17,14 @@ keywords:
   - self-hosted
   - kubernetes
   - helm
+annotations:
+  artifacthub.io/description: "A Helm chart for deploying Palmr, an open-source file-sharing platform, on Kubernetes."
+  artifacthub.io/license: "BSD-2-Clause"
+  artifacthub.io/links: |
+    - name: GitHub
+      url: https://github.com/kyantech/Palmr/tree/main
+    - name: Documentation
+      url: https://palmr-docs.kyantech.com.br/
+  artifacthub.io/maintainers: |
+    - name: Kyantech Team
+      email: support@kyantech.com.br

@@ -1,5 +1,7 @@
 # Palmr Helm Chart
 
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/palmr-helm)](https://artifacthub.io/packages/search?repo=palmr-helm)
+
 This Helm chart is designed to deploy [Palmr](https://github.com/kyantech/Palmr/tree/main), an open-source file-sharing platform focused on privacy and security, on your Kubernetes cluster.
 
 Palmr gives you the ability to host your own file transfer service without relying on third-party providers, ensuring full control over your data. For more details about Palmr, please visit the [official documentation](https://palmr-docs.kyantech.com.br/).
@@ -69,6 +71,20 @@ Refer to the `values.yaml` file for a complete list of configurable parameters:
       Set this to `true` to use MinIO or `false` to use local storage via a dedicated PVC.
     - `palmr.storage.pvc.size`
     - `palmr.storage.pvc.storageClassName`
+
+## Listing on Artifact Hub
+
+To list this Helm chart on Artifact Hub, follow these steps:
+
+1. **Create an Artifact Hub account**: If you don't have one already, create an account on [Artifact Hub](https://artifacthub.io/).
+
+2. **Add a new repository**: Go to your profile and add a new repository. Provide the necessary details such as the repository name, URL, and description.
+
+3. **Upload the `artifacthub-repo.yml` file**: Ensure that the `artifacthub-repo.yml` file is present in the root of your repository. This file contains metadata required by Artifact Hub.
+
+4. **Verify the repository**: Follow the instructions on Artifact Hub to verify your repository. This may involve adding a verification file or DNS record.
+
+5. **Publish the chart**: Once the repository is verified, you can publish your Helm chart on Artifact Hub. This will make it available for others to discover and use.
 
 ## Credits and Acknowledgements
 
