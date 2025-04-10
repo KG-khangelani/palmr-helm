@@ -1,0 +1,29 @@
+name: Release Helm Chart
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v1
+
+      - name: Package Helm chart
+        run: helm package ./chart
+
+      - name: Upload Helm chart to GitHub Releases
+        uses: helm/chart-releaser-action@v1.2.0
+        env:
+          CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          charts_dir: ./chart
+          owner: KG-khangelani
+          repo: palmr-helm

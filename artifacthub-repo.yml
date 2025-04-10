@@ -1,9 +1,9 @@
 repositoryID: "palmr-helm"
-name: "Palmr Helm Chart Repository"
-displayName: "Palmr Helm Chart Repository"
-url: "https://github.com/KG-khangelani/palmr-helm"
+name: "palmr-helm"
+displayName: "Palmr Helm"
+url: "https://github.com/kyantech/palmr-helm"
 description: "A repository for Helm charts to deploy Palmr, an open-source file-sharing platform, on Kubernetes."
-homeURL: "https://github.com/KG-khangelani/palmr-helm"
+homeURL: "https://github.com/kyantech/palmr-helm"
 maintainers:
   - name: "Kyantech Team"
     email: "support@kyantech.com.br"
