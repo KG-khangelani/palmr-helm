@@ -72,6 +72,51 @@ Refer to the `values.yaml` file for a complete list of configurable parameters:
     - `palmr.storage.pvc.size`
     - `palmr.storage.pvc.storageClassName`
 
+## Listing on Artifact Hub
+
+To list this Helm chart on Artifact Hub, follow these steps:
+
+1. **Create an Artifact Hub account**: If you don't have one already, create an account on [Artifact Hub](https://artifacthub.io/).
+
+2. **Add a new repository**: Go to your profile and add a new repository. Provide the necessary details such as the repository name, URL, and description.
+
+3. **Upload the `artifacthub-repo.yml` file**: Ensure that the `artifacthub-repo.yml` file is present in the root of your repository. This file contains metadata required by Artifact Hub.
+
+4. **Verify the repository**: Follow the instructions on Artifact Hub to verify your repository. This may involve adding a verification file or DNS record.
+
+5. **Publish the chart**: Once the repository is verified, you can publish your Helm chart on Artifact Hub. This will make it available for others to discover and use.
+
+## Adding the Repository to Artifact Hub
+
+To add this repository to Artifact Hub, follow these steps:
+
+1. **Go to Artifact Hub**: Visit [Artifact Hub](https://artifacthub.io/).
+
+2. **Search for the repository**: Use the search bar to find the `palmr-helm` repository.
+
+3. **Add the repository**: Click on the repository and follow the instructions to add it to your list of repositories.
+
+## Triggering the GitHub Actions Workflow
+
+To automate the deployment process, a GitHub Actions workflow has been added to this repository. Follow these steps to trigger the workflow:
+
+1. **Customize the `values.yaml` file**
+
+   Before triggering the workflow, make sure to customize the `values.yaml` file according to your requirements. This file contains configurable parameters for PostgreSQL, MinIO, and Palmr.
+
+2. **Push changes to the `main` branch**
+
+   The GitHub Actions workflow is triggered by a push to the `main` branch. Make sure your changes are committed and push them to the `main` branch:
+
+   ```bash
+   git add .
+   git commit -m "Update values.yaml"
+   git push origin main
+   ```
+
+3. **Monitor the workflow**
+
+   Once the changes are pushed, the GitHub Actions workflow will be triggered automatically. You can monitor the progress of the workflow by navigating to the "Actions" tab in your GitHub repository.
 
 ## Credits and Acknowledgements
 
